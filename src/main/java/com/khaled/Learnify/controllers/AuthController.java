@@ -1,6 +1,5 @@
 package com.khaled.Learnify.controllers;
 
-
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -43,150 +42,172 @@ import com.khaled.Learnify.services.FilesStorageServiceImpl;
 
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * 
+ * @author Khaled this is the Auth controller takes care for singup and signin
+ *         requests
+ *
+ */
 
 @Slf4j
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
-  @Autowired
-  AuthenticationManager authenticationManager;
+	@Autowired
+	AuthenticationManager authenticationManager;
 
-  @Autowired
-  UserRepository userRepository;
+	@Autowired
+	UserRepository userRepository;
 
-  @Autowired
-  RoleRepository roleRepository;
+	@Autowired
+	RoleRepository roleRepository;
 
-  @Autowired
-  PasswordEncoder encoder;
+	@Autowired
+	PasswordEncoder encoder;
 
-  @Autowired
-  JwtUtils jwtUtils;
-  
-  @Autowired
-  FilesStorageServiceImpl storageService;
+	@Autowired
+	JwtUtils jwtUtils;
 
-  @PostMapping("/signin")
-  public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
+	@Autowired
+	FilesStorageServiceImpl storageService;
 
-    Authentication authentication = authenticationManager.authenticate(
-        new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword()));
+	/**
+	 * 
+	 * @param loginRequest this is the loginRequest object that contains username
+	 *                     and password
+	 * @return a responceEntity object with user details
+	 */
+	@PostMapping("/signin")
+	public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
 
-    SecurityContextHolder.getContext().setAuthentication(authentication);
+		Authentication authentication = authenticationManager.authenticate(
+				new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword()));
 
-    UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+		SecurityContextHolder.getContext().setAuthentication(authentication);
 
-    ResponseCookie jwtCookie = jwtUtils.generateJwtCookie(userDetails);
+		UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
 
-    List<String> roles = userDetails.getAuthorities().stream()
-        .map(item -> item.getAuthority())
-        .collect(Collectors.toList());
+		ResponseCookie jwtCookie = jwtUtils.generateJwtCookie(userDetails);
 
-    return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, jwtCookie.toString())
-        .body(new UserInfoResponse(userDetails.getId(),
-                                   userDetails.getUsername(),
-                                   userDetails.getEmail(),
-                                   roles));
-  }
+		List<String> roles = userDetails.getAuthorities().stream().map(item -> item.getAuthority())
+				.collect(Collectors.toList());
 
-  @PostMapping("/signup")
-  public ResponseEntity<?> registerUser(@Valid @RequestPart() SignupRequest signUpRequest,@RequestPart("file") MultipartFile file) {
-    if (userRepository.existsByUsername(signUpRequest.getUsername())) {
-      return ResponseEntity
-          .badRequest()
-          .body(new MessageResponse("Error: Username is already taken!"));
-    }
+		return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, jwtCookie.toString()).body(
+				new UserInfoResponse(userDetails.getId(), userDetails.getUsername(), userDetails.getEmail(), roles));
+	}
 
-    if (userRepository.existsByEmail(signUpRequest.getEmail())) {
-      return ResponseEntity
-          .badRequest()
-          .body(new MessageResponse("Error: Email is already in use!"));
-    }
+	/**
+	 * 
+	 * @param signUpRequest send a singUp request object with user details
+	 * @param file          profile image file
+	 * @return
+	 */
+	@PostMapping("/signup")
+	public ResponseEntity<?> registerUser(@Valid @RequestPart() SignupRequest signUpRequest,
+			@RequestPart("file") MultipartFile file) {
+		if (userRepository.existsByUsername(signUpRequest.getUsername())) {
+			return ResponseEntity.badRequest().body(new MessageResponse("Error: Username is already taken!"));
+		}
 
-    // Create new user's account
-    User user = new User(signUpRequest.getUsername(), 
-                         signUpRequest.getEmail(),
-                         encoder.encode(signUpRequest.getPassword()));
+		if (userRepository.existsByEmail(signUpRequest.getEmail())) {
+			return ResponseEntity.badRequest().body(new MessageResponse("Error: Email is already in use!"));
+		}
 
-    Set<String> strRoles = signUpRequest.getRoles();
-    Set<Role> roles = new HashSet<>();
+		// Create new user's account*
+		//we can change the signUpRequest object and add other fields to the user account 
+		User user = new User(signUpRequest.getUsername(), signUpRequest.getEmail(),
+				encoder.encode(signUpRequest.getPassword()));
 
-    if (strRoles == null) {
-      Role userRole = roleRepository.findByName(ERole.ROLE_USER)
-          .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
-      roles.add(userRole);
-    } else {
-      strRoles.forEach(role -> {
-        switch (role) {
-        case "admin":
-          Role adminRole = roleRepository.findByName(ERole.ROLE_ADMIN)
-              .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
-          roles.add(adminRole);
+		Set<String> strRoles = signUpRequest.getRoles();
+		Set<Role> roles = new HashSet<>();
 
-          break;
-        case "mod":
-          Role modRole = roleRepository.findByName(ERole.ROLE_MODERATOR)
-              .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
-          roles.add(modRole);
+		// check for user roles in strRoles array (possible paramater are
+		// ["ENSEIGNAN","ETUDIENT"])
+		if (strRoles == null) {
+			Role userRole = roleRepository.findByName(ERole.ROLE_USER)
+					.orElseThrow(() -> new RuntimeException("Error: Role is not found."));
+			roles.add(userRole);
+			log.info("role user is found first");
+		} else {
+			strRoles.forEach(role -> {
+				switch (role) {
+				case "ENSEIGNAN":
+					Role adminRole = roleRepository.findByName(ERole.ROLE_ENSEIGNANT)
+							.orElseThrow(() -> new RuntimeException("Error: Role is not found."));
+					roles.add(adminRole);
+					log.info("ROLE_ENSEIGNANT user is found");
 
-          break;
-        default:
-          Role userRole = roleRepository.findByName(ERole.ROLE_USER)
-              .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
-          roles.add(userRole);
-        }
-      });
-    }
+					break;
+				case "ETUDIENT":
+					Role modRole = roleRepository.findByName(ERole.ROLE_ETUDIENT)
+							.orElseThrow(() -> new RuntimeException("Error: Role is not found."));
+					roles.add(modRole);
 
-    user.setRoles(roles);
-    userRepository.save(user);
-    
-    log.info("user is registred with success");
-    
-    //after registring the user we will save the profile picture
-    
-    String message = "";
-    try {
-      storageService.save(file);
+					break;
+				default:
+					Role userRole = roleRepository.findByName(ERole.ROLE_USER)
+							.orElseThrow(() -> new RuntimeException("Error: Role is not found."));
+					roles.add(userRole);
+					log.info("ROLE_USER user is found in default");
+				}
+			});
+		}
 
-      message = "Uploaded the file successfully: " + file.getOriginalFilename()+" and user is registred with success";
-      log.info(message);
-      return ResponseEntity.status(HttpStatus.OK).body(new MessageResponse(message));
-    } catch (Exception e) {
-      message = "Could not upload the file: " + file.getOriginalFilename() + "!";
-      log.info(message);
-      return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(new MessageResponse(message));
-    }
+		user.setRoles(roles);
+		userRepository.save(user);
 
-    
-  }
-  
-  @GetMapping("/getauthuser")
-  public ResponseEntity<?> getAuthUser(){
-	  UserDetailsImpl userDetails =
-				(UserDetailsImpl) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-	    List<String> roles = userDetails.getAuthorities().stream()
-	            .map(item -> item.getAuthority())
-	            .collect(Collectors.toList());
-	    return ResponseEntity.ok().body(new UserInfoResponse(userDetails.getId(),
-	                                       userDetails.getUsername(),
-	                                       userDetails.getEmail(),
-	                                       roles));
-	  
-  }
-  
-  @PostMapping("/profilimg")
-  public ResponseEntity<MessageResponse> uploadFile(@RequestParam("file") MultipartFile file) {
-    String message = "";
-    try {
-      storageService.save(file);
+		log.info("user is registred with success");
 
-      message = "Uploaded the file successfully: " + file.getOriginalFilename();
-      return ResponseEntity.status(HttpStatus.OK).body(new MessageResponse(message));
-    } catch (Exception e) {
-      message = "Could not upload the file: " + file.getOriginalFilename() + "!";
-      return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(new MessageResponse(message));
-    }
-  }
+		// after registring the user we will save the profile picture
+
+		String message = "";
+		try {
+			storageService.save(file);
+
+			message = "Uploaded the file successfully: " + file.getOriginalFilename()
+					+ " and user is registred with success";
+			log.info(message);
+			return ResponseEntity.status(HttpStatus.OK).body(new MessageResponse(message));
+		} catch (Exception e) {
+			message = "Could not upload the file: " + file.getOriginalFilename() + "!";
+			log.info(message);
+			return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(new MessageResponse(message));
+		}
+
+	}
+
+	/**
+	 * 
+	 * @return a userInfoResponse contains user details and informations
+	 */
+	@GetMapping("/getauthuser")
+	public ResponseEntity<?> getAuthUser() {
+		UserDetailsImpl userDetails = (UserDetailsImpl) SecurityContextHolder.getContext().getAuthentication()
+				.getPrincipal();
+		List<String> roles = userDetails.getAuthorities().stream().map(item -> item.getAuthority())
+				.collect(Collectors.toList());
+		return ResponseEntity.ok().body(
+				new UserInfoResponse(userDetails.getId(), userDetails.getUsername(), userDetails.getEmail(), roles));
+
+	}
+
+	/**
+	 * 
+	 * @param file a file to be uploaded
+	 * @return HttpStatus OK or Exception_Failed
+	 */
+	@PostMapping("/profilimg")
+	public ResponseEntity<MessageResponse> uploadFile(@RequestParam("file") MultipartFile file) {
+		String message = "";
+		try {
+			storageService.save(file);
+
+			message = "Uploaded the file successfully: " + file.getOriginalFilename();
+			return ResponseEntity.status(HttpStatus.OK).body(new MessageResponse(message));
+		} catch (Exception e) {
+			message = "Could not upload the file: " + file.getOriginalFilename() + "!";
+			return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(new MessageResponse(message));
+		}
+	}
 }
