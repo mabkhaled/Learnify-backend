@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -40,7 +41,10 @@ import com.khaled.Learnify.security.jwt.JwtUtils;
 import com.khaled.Learnify.security.services.UserDetailsImpl;
 import com.khaled.Learnify.services.FilesStorageServiceImpl;
 
+import lombok.extern.slf4j.Slf4j;
 
+
+@Slf4j
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
 @RequestMapping("/api/auth")
@@ -87,7 +91,7 @@ public class AuthController {
   }
 
   @PostMapping("/signup")
-  public ResponseEntity<?> registerUser(@Valid @RequestBody SignupRequest signUpRequest) {
+  public ResponseEntity<?> registerUser(@Valid @RequestPart() SignupRequest signUpRequest,@RequestPart("file") MultipartFile file) {
     if (userRepository.existsByUsername(signUpRequest.getUsername())) {
       return ResponseEntity
           .badRequest()
@@ -137,8 +141,25 @@ public class AuthController {
 
     user.setRoles(roles);
     userRepository.save(user);
+    
+    log.info("user is registred with success");
+    
+    //after registring the user we will save the profile picture
+    
+    String message = "";
+    try {
+      storageService.save(file);
 
-    return ResponseEntity.ok(new MessageResponse("User registered successfully!"));
+      message = "Uploaded the file successfully: " + file.getOriginalFilename()+" and user is registred with success";
+      log.info(message);
+      return ResponseEntity.status(HttpStatus.OK).body(new MessageResponse(message));
+    } catch (Exception e) {
+      message = "Could not upload the file: " + file.getOriginalFilename() + "!";
+      log.info(message);
+      return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(new MessageResponse(message));
+    }
+
+    
   }
   
   @GetMapping("/getauthuser")

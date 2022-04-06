@@ -13,7 +13,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.FileSystemUtils;
 import org.springframework.web.multipart.MultipartFile;
 
+import lombok.extern.slf4j.Slf4j;
+
 @Service
+@Slf4j
 public class FilesStorageServiceImpl implements StorageService {
 	private final Path root = Paths.get("uploads");
 	private final File pathToUploads = new File("uploads");
@@ -22,14 +25,14 @@ public class FilesStorageServiceImpl implements StorageService {
 	//this init method will test if the uploads folder exists other wise it will create it
 	@Override
 	public void init() {
+		log.info("initializing the storage service !");
 		try {
 			if (!pathToUploads.exists() ) {
-				System.out.println(root);
-				System.out.println(Files.createDirectory(root));
-				System.out.println(" upload folder is created !");
+				Files.createDirectory(root);
+				log.info(" upload folder is created !");
 			}
 			else {
-				System.out.println("folder already exists");
+				log.info("folder already exists");
 			}
 
 		} catch (IOException e) {
