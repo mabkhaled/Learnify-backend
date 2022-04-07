@@ -41,10 +41,10 @@ public class FilesStorageServiceImpl implements StorageService {
 	}
 
 	@Override
-	public void save(MultipartFile file) {
+	public void save(MultipartFile file,String fileName) {
 		try {
-			Files.copy(file.getInputStream(), this.root.resolve(file.getOriginalFilename()));
-			System.out.println("the file name is : "+file.getOriginalFilename());
+			Files.copy(file.getInputStream(), this.root.resolve(fileName));
+			log.info("the file name is : "+file.getOriginalFilename());
 		} catch (Exception e) {
 			throw new RuntimeException("Could not store the file. Error: " + e.getMessage());
 		}

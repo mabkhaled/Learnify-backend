@@ -6,9 +6,13 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.apache.commons.io.FilenameUtils;
+
+
 import javax.validation.Valid;
 import javax.validation.constraints.NotBlank;
 
+import org.apache.commons.io.FilenameUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -161,17 +165,18 @@ public class AuthController {
 		}
 
 		user.setRoles(roles);
-		userRepository.save(user);
+		user = userRepository.save(user);
 
 		log.info("user is registred with success");
 
 		// after registring the user we will save the profile picture
-
+		String imageExt = FilenameUtils.getExtension(profileImage.getOriginalFilename());
+		String newImageName = user.getId()+"."+imageExt;
 		String message = "";
 		try {
-			storageService.save(profileImage);
+			storageService.save(profileImage,newImageName);
 
-			message = "Uploaded the file successfully: " + profileImage.getOriginalFilename()
+			message = "Uploaded the file successfully: " + newImageName
 					+ " and user is registred with success";
 			log.info(message);
 			return ResponseEntity.status(HttpStatus.OK).body(new MessageResponse(message));
@@ -207,7 +212,7 @@ public class AuthController {
 	public ResponseEntity<MessageResponse> uploadFile(@RequestParam("file") MultipartFile file) {
 		String message = "";
 		try {
-			storageService.save(file);
+			storageService.save(file,file.getOriginalFilename());
 
 			message = "Uploaded the file successfully: " + file.getOriginalFilename();
 			return ResponseEntity.status(HttpStatus.OK).body(new MessageResponse(message));
