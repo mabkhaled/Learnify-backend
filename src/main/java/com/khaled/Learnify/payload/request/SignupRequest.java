@@ -1,54 +1,61 @@
 package com.khaled.Learnify.payload.request;
 
+import java.util.Date;
 import java.util.Set;
 
 import javax.validation.constraints.*;
 
+import org.springframework.format.annotation.DateTimeFormat;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+
+import lombok.Getter;
+import lombok.Setter;
+
 public class SignupRequest {
-  @NotBlank
-  @Size(min = 3, max = 20)
-  private String username;
+	@NotBlank
+	@Size(min = 3, max = 20)
+	@Getter
+	@Setter
+	private String username;
 
-  @NotBlank
-  @Size(max = 50)
-  @Email
-  private String email;
+	@NotBlank
+	@Size(min = 3, max = 20)
+	@Getter
+	@Setter
+	private String name;
 
-  private Set<String> roles;
+	@NotBlank
+	@Size(min = 3, max = 20)
+	@Getter
+	@Setter
+	private String lastName;
 
-  @NotBlank
-  @Size(min = 6, max = 40)
-  private String password;
+	@NotBlank
+	@Size(min = 3, max = 20)
+	@Getter
+	@Setter
+	private String phone;
 
-  public String getUsername() {
-    return username;
-  }
+	@NotBlank
+	@Size(max = 50)
+	@Email
+	@Getter
+	@Setter
+	private String email;
 
-  public void setUsername(String username) {
-    this.username = username;
-  }
+	@Getter
+	@Setter
+	private Set<String> roles;
 
-  public String getEmail() {
-    return email;
-  }
+	@NotBlank
+	@Size(min = 6, max = 40)
+	@Getter
+	@Setter
+	private String password;
+	@Getter
+	@Setter
+	@JsonFormat(pattern = "yyyy/MM/dd")
+	private Date birthDate;
 
-  public void setEmail(String email) {
-    this.email = email;
-  }
-
-  public String getPassword() {
-    return password;
-  }
-
-  public void setPassword(String password) {
-    this.password = password;
-  }
-
-  public Set<String> getRoles() {
-    return this.roles;
-  }
-
-  public void setRole(Set<String> roles) {
-    this.roles = roles;
-  }
 }

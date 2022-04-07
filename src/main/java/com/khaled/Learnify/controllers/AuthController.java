@@ -1,11 +1,13 @@
 package com.khaled.Learnify.controllers;
 
+import java.text.SimpleDateFormat;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.validation.Valid;
+import javax.validation.constraints.NotBlank;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -105,7 +107,7 @@ public class AuthController {
 	 */
 	@PostMapping("/signup")
 	public ResponseEntity<?> registerUser(@Valid @RequestPart() SignupRequest signUpRequest,
-			@RequestPart("file") MultipartFile file) {
+			@RequestPart("profileImage") MultipartFile profileImage) {
 		if (userRepository.existsByUsername(signUpRequest.getUsername())) {
 			return ResponseEntity.badRequest().body(new MessageResponse("Error: Username is already taken!"));
 		}
@@ -116,8 +118,12 @@ public class AuthController {
 
 		// Create new user's account*
 		//we can change the signUpRequest object and add other fields to the user account 
-		User user = new User(signUpRequest.getUsername(), signUpRequest.getEmail(),
-				encoder.encode(signUpRequest.getPassword()));
+		//User user = new User(signUpRequest.getUsername(), signUpRequest.getEmail(),
+		//		encoder.encode(signUpRequest.getPassword()));
+		
+		User user = new User(signUpRequest.getUsername(),signUpRequest.getName(),
+				signUpRequest.getLastName(),signUpRequest.getEmail(),encoder.encode(signUpRequest.getPassword()),signUpRequest.getPhone()
+				,signUpRequest.getBirthDate());
 
 		Set<String> strRoles = signUpRequest.getRoles();
 		Set<Role> roles = new HashSet<>();
@@ -163,14 +169,14 @@ public class AuthController {
 
 		String message = "";
 		try {
-			storageService.save(file);
+			storageService.save(profileImage);
 
-			message = "Uploaded the file successfully: " + file.getOriginalFilename()
+			message = "Uploaded the file successfully: " + profileImage.getOriginalFilename()
 					+ " and user is registred with success";
 			log.info(message);
 			return ResponseEntity.status(HttpStatus.OK).body(new MessageResponse(message));
 		} catch (Exception e) {
-			message = "Could not upload the file: " + file.getOriginalFilename() + "!";
+			message = "Could not upload the file: " + profileImage.getOriginalFilename() + "!";
 			log.info(message);
 			return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(new MessageResponse(message));
 		}
