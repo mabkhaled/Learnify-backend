@@ -56,7 +56,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 
 @Slf4j
-@CrossOrigin(origins = "*", maxAge = 3600)
+@CrossOrigin(origins ="http://localhost:8081" ,allowCredentials ="true")
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
@@ -95,12 +95,13 @@ public class AuthController {
 		UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
 
 		ResponseCookie jwtCookie = jwtUtils.generateJwtCookie(userDetails);
+		log.info("jwt token : "+jwtCookie.toString());
 
 		List<String> roles = userDetails.getAuthorities().stream().map(item -> item.getAuthority())
 				.collect(Collectors.toList());
 
 		return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, jwtCookie.toString()).body(
-				new UserInfoResponse(userDetails.getId(), userDetails.getUsername(), userDetails.getEmail(), roles));
+				new UserInfoResponse(userDetails.getId(), userDetails.getUsername(), userDetails.getEmail(), roles,jwtCookie.getValue().toString()));
 	}
 
 	/**
@@ -199,7 +200,7 @@ public class AuthController {
 		List<String> roles = userDetails.getAuthorities().stream().map(item -> item.getAuthority())
 				.collect(Collectors.toList());
 		return ResponseEntity.ok().body(
-				new UserInfoResponse(userDetails.getId(), userDetails.getUsername(), userDetails.getEmail(), roles));
+				new UserInfoResponse(userDetails.getId(), userDetails.getUsername(), userDetails.getEmail(), roles,""));
 
 	}
 

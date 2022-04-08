@@ -21,4 +21,5 @@ public class LearnifyBackendApplication implements CommandLineRunner {
 	  public void run(String... arg) throws Exception {
 	    storageService.init();
 	  }
+	  
 }
