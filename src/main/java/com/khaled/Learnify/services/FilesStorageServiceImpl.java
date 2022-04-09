@@ -18,8 +18,8 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @Slf4j
 public class FilesStorageServiceImpl implements StorageService {
-	private final Path root = Paths.get("uploads");
-	private final File pathToUploads = new File("uploads");
+	private final Path root = Paths.get("src/main/resources/static/profileimg");
+	private final File pathToUploads = new File("src/main/resources/static/profileimg");
 
 	
 	//this init method will test if the uploads folder exists other wise it will create it
